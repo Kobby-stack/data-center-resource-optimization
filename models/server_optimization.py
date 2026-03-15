@@ -1,4 +1,11 @@
 import pulp
+import os
+import pandas as pd
+import random
+
+# -----------------------------
+# Server data
+# -----------------------------
 
 servers = ["S1", "S2", "S3"]
 
@@ -14,35 +21,64 @@ capacity = {
     "S3": 70
 }
 
-demand = 120
+# -----------------------------
+# Simulate hourly demand (24 hours)
+# -----------------------------
 
-model = pulp.LpProblem("DataCenterOptimization", pulp.LpMinimize)
+hours = list(range(24))
 
-x = pulp.LpVariable.dicts("load", servers, lowBound=0)
+demand_data = {
+    h: random.randint(80, 150) for h in hours
+}
 
-model += sum(power_cost[s] * x[s] for s in servers)
+results = []
 
-model += sum(x[s] for s in servers) == demand
+# -----------------------------
+# Optimization for each hour
+# -----------------------------
 
-for s in servers:
-    model += x[s] <= capacity[s]
+for h in hours:
 
-model.solve()
-# Save results to file
-with open("results/optimization_results.txt", "w") as f:
-    f.write("Optimal Server Workload Allocation\n\n")
+    demand = demand_data[h]
+
+    model = pulp.LpProblem(f"Optimization_Hour_{h}", pulp.LpMinimize)
+
+    x = pulp.LpVariable.dicts("load", servers, lowBound=0)
+
+    # Objective
+    model += sum(power_cost[s] * x[s] for s in servers)
+
+    # Demand constraint
+    model += sum(x[s] for s in servers) == demand
+
+    # Capacity constraints
+    for s in servers:
+        model += x[s] <= capacity[s]
+
+    model.solve()
 
     for s in servers:
-        result = f"{s}: {x[s].value()}\n"
-        print(result)
-        f.write(result)
+        results.append({
+            "hour": h,
+            "server": s,
+            "allocation": x[s].value(),
+            "demand": demand
+        })
 
-    total_cost = pulp.value(model.objective)
+# -----------------------------
+# Convert results to dataframe
+# -----------------------------
 
-    f.write(f"\nTotal Power Cost: {total_cost}")
-    print("\nTotal Power Cost:", total_cost)
+df = pd.DataFrame(results)
 
-print("Optimal Allocation")
+# -----------------------------
+# Ensure results folder exists
+# -----------------------------
 
-for s in servers:
-    print(s, x[s].value())
+os.makedirs("results", exist_ok=True)
+
+# Save results
+df.to_csv("results/hourly_optimization_results.csv", index=False)
+
+print("Optimization completed for 24 hours")
+print("Results saved to results/hourly_optimization_results.csv")
