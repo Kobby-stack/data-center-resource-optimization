@@ -1,0 +1,7 @@
+Optimal Server Workload Allocation
+
+S1: 50.0
+S2: 0.0
+S3: 70.0
+
+Total Power Cost: 430.0

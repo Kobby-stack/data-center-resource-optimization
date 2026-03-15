@@ -28,6 +28,19 @@ for s in servers:
     model += x[s] <= capacity[s]
 
 model.solve()
+# Save results to file
+with open("results/optimization_results.txt", "w") as f:
+    f.write("Optimal Server Workload Allocation\n\n")
+
+    for s in servers:
+        result = f"{s}: {x[s].value()}\n"
+        print(result)
+        f.write(result)
+
+    total_cost = pulp.value(model.objective)
+
+    f.write(f"\nTotal Power Cost: {total_cost}")
+    print("\nTotal Power Cost:", total_cost)
 
 print("Optimal Allocation")
 
